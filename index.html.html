@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PSI Tool Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root{--bg:#eef1f4;--card:#fff;--ink:#16222e;--mute:#5d6b79;--line:#d5dce3;--accent:#0f5c8c;--ok:#1d7a46;--warn:#a8650a;--bad:#b3261e;--okbg:#e2f3e8;--warnbg:#fbeed6;--badbg:#fbe4e2;--nobg:#e6e9ed;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10171e;--card:#18222c;--ink:#e6edf3;--mute:#94a3b2;--line:#2c3947;--accent:#5eb3e6;--ok:#6fd49a;--warn:#f0b35a;--bad:#ff8f86;--okbg:#14301f;--warnbg:#3a2a0e;--badbg:#3d1a17;--nobg:#242f3a}}
+:root[data-theme="dark"]{--bg:#10171e;--card:#18222c;--ink:#e6edf3;--mute:#94a3b2;--line:#2c3947;--accent:#5eb3e6;--ok:#6fd49a;--warn:#f0b35a;--bad:#ff8f86;--okbg:#14301f;--warnbg:#3a2a0e;--badbg:#3d1a17;--nobg:#242f3a}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 "Segoe UI",system-ui,-apple-system,sans-serif}
+main{max-width:640px;margin:0 auto;padding:12px 14px 80px}
+h1{font-size:1.25rem;margin:6px 0 2px}
+.sub{color:var(--mute);font-size:.85rem;margin:0 0 10px}
+nav{display:flex;gap:6px;margin:10px 0;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:6px 0;z-index:5}
+nav button{flex:1;padding:10px 4px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;font:inherit;font-size:.9rem}
+nav button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin:0 0 10px}
+.row{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.name{font-weight:600}.meta{color:var(--mute);font-size:.85rem;margin-top:2px}
+.badge{font-size:.78rem;font-weight:600;padding:3px 8px;border-radius:99px;white-space:nowrap}
+.ok{background:var(--okbg);color:var(--ok)}.warn{background:var(--warnbg);color:var(--warn)}.bad{background:var(--badbg);color:var(--bad)}.no{background:var(--nobg);color:var(--mute)}
+.alert{border-left:4px solid var(--bad);background:var(--badbg);padding:10px 12px;border-radius:6px;margin-bottom:10px;font-size:.9rem}
+.alert.w{border-color:var(--warn);background:var(--warnbg)}
+label{display:block;font-size:.82rem;color:var(--mute);margin:8px 0 3px}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+.btn{padding:10px 14px;border:0;border-radius:8px;background:var(--accent);color:#fff;font:inherit;font-weight:600}
+.btn.s{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btn.d{background:transparent;color:var(--bad);border:1px solid var(--bad)}
+.btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.pick{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.pick input[type=checkbox]{width:22px;height:22px;flex:none}
+.pick input[type=number]{width:60px;flex:none}
+.pick .t{flex:1;min-width:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hide{display:none}
+#pv{display:none}.ft{width:100%;border-collapse:collapse;font:12px serif;color:#000}.ft td,.ft th{border:1px solid #000;padding:3px 5px;vertical-align:top;text-align:left}.ft th{text-align:center}.ck{font:12px serif;margin:8px 0}.fc{text-align:right;font:11px serif}.ttl{text-align:center;font:700 14px serif;margin:6px 0}#pv.show{display:block;position:fixed;inset:0;overflow:auto;background:#fff;color:#000;z-index:50;padding:8px}@media print{.np{display:none}#pv.show{position:static;padding:0}}
+@media print{body>main{display:none}#pv{display:block;color:#000;background:#fff;padding:10mm;font:12px Arial}#pv table{width:100%;border-collapse:collapse}#pv td,#pv th{border:1px solid #000;padding:4px;text-align:left}}
+</style>
+</head>
+<body>
+<main>
+<h1>PSI tool tracker</h1>
+<p class="sub">Serial numbers, calibration due dates, take-out and take-back log</p>
+<nav id="nav"></nav>
+<div id="v"></div>
+</main>
+<div id="pv"></div>
+<script>
+var K='psi_tracker_v1',S={tools:[],logs:[],tab:'tools',edit:null,warn:30};
+var CATS=['Wall thickness','CRM / reference block','Hardness','Magnetic particle','Pressure','Dye penetrant','Camera','Electrical','Consumable','Other'];
+var CK=['บันทึกปฏิบัติงานรายวัน (FS-MPAD-I-711-3)','คำแถลงการณ์รักษาความลับและความเป็นกลาง (FS-MPAD-I-712-1)','แผนที่การตรวจสอบ (Inspection Map) (FS-MPAD-I-711-4)','เงื่อนไขการให้บริการ (FS-MPAD-I-711-5)','ข้อมูลที่ได้จากลูกค้า (FS-MPAD-I-711-2)'];
+function addCons(){['Penetrant','Developer','Cleaner','Digital camera','Blower','Weight','Pie gauge'].forEach(function(n,i){S.tools.push({id:'k'+i,name:n,cat:'Consumable',sn:'',cal:'',yrs:1})});save()}
+function load(){try{var r=localStorage.getItem(K);if(r){var d=JSON.parse(r);S.tools=d.tools||[];S.logs=d.logs||[];S.warn=d.warn||30;if(!d.v2)addCons();return}}catch(e){}
+ var seed=[['Ultrasonic wall thickness gauge DM5','Wall thickness'],['CRM (wall thickness)','CRM / reference block'],['Ultrasonic hardness tester MIC 20','Hardness'],['CRM (hardness)','CRM / reference block'],['Yoke','Magnetic particle','3922'],['Pressure gauge 20 bar','Pressure'],['UTM Olympus','Other'],['Lux meter','Other'],['Temperature gun','Other'],['Gas detector','Other']];
+ S.tools=seed.map(function(a,i){return{id:'t'+i,name:a[0],cat:a[1],sn:a[2]||'',cal:'',yrs:1}});addCons()}
+function save(){try{localStorage.setItem(K,JSON.stringify({tools:S.tools,logs:S.logs,warn:S.warn,v2:1}))}catch(e){}}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function today(){var d=new Date();d.setHours(0,0,0,0);return d}
+function iso(d){var m=d.getMonth()+1,x=d.getDate();return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(x<10?'0':'')+x}
+function fmt(s){if(!s)return'–';var d=new Date(s+'T00:00:00');return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
+function due(t){if(!t.cal)return null;var d=new Date(t.cal+'T00:00:00');d.setFullYear(d.getFullYear()+(+t.yrs||1));return d}
+function days(t){var d=due(t);return d?Math.round((d-today())/864e5):null}
+function st(t){if(t.cat==='Consumable')return{c:'no',l:'No cal needed',n:null};var n=days(t);if(n===null)return{c:'no',l:'No cal date',n:null};if(n<0)return{c:'bad',l:'Overdue '+(-n)+' d',n:n};if(n<=S.warn)return{c:'warn',l:'Due in '+n+' d',n:n};return{c:'ok',l:'Valid · '+n+' d',n:n}}
+function nav(){var T=[['tools','Tools'],['out','Take out'],['log','Log']];
+ document.getElementById('nav').innerHTML=T.map(function(a){return'<button class="'+(S.tab===a[0]?'on':'')+'" onclick="go(\''+a[0]+'\')">'+a[1]+'</button>'}).join('')}
+function go(t){S.tab=t;S.edit=null;draw()}
+function draw(){nav();var v=document.getElementById('v');v.innerHTML=S.tab==='tools'?vTools():S.tab==='out'?vOut():vLog()}
+function vTools(){
+ if(S.edit)return vEdit();
+ var od=S.tools.filter(function(t){return st(t).c==='bad'}),sn=S.tools.filter(function(t){return st(t).c==='warn'}),h='';
+ if(od.length)h+='<div class="alert"><b>'+od.length+' overdue:</b> '+od.map(function(t){return esc(t.name)}).join(', ')+'</div>';
+ if(sn.length)h+='<div class="alert w"><b>'+sn.length+' due within '+S.warn+' days:</b> '+sn.map(function(t){return esc(t.name)}).join(', ')+'</div>';
+ var L=S.tools.slice().sort(function(a,b){var x=days(a),y=days(b);return(x===null?1e9:x)-(y===null?1e9:y)});
+ h+='<div class="btns" style="margin:0 0 10px"><button class="btn" onclick="ed(\'new\')">Add tool</button><button class="btn s" onclick="notif()">Turn on alerts</button><button class="btn s" onclick="line()">Send due list to LINE</button></div>';
+ h+=L.map(function(t){var s=st(t);return'<div class="card" onclick="ed(\''+t.id+'\')"><div class="row"><div><div class="name">'+esc(t.name)+'</div><div class="meta">S/N: '+(esc(t.sn)||'<i>not entered</i>')+' · '+esc(t.cat)+'</div></div><span class="badge '+s.c+'">'+s.l+'</span></div><div class="meta">Calibrated '+fmt(t.cal)+' · every '+t.yrs+' yr · due '+(due(t)?fmt(iso(due(t))):'–')+'</div></div>'}).join('');
+ h+='<div class="card"><label>Warn me this many days before due</label><input type="number" min="1" value="'+S.warn+'" onchange="S.warn=+this.value||30;save();draw()"><label style="margin-top:14px">Google Sheet export (columns: Tool, S/N, Last calibration, Years)</label><textarea id="tsv" rows="3" readonly>'+esc(tsv())+'</textarea><div class="btns"><button class="btn s" onclick="cpTsv()">Copy for Sheet</button></div><label style="margin-top:14px">Backup (copy this text to keep it safe, paste back to restore)</label><textarea id="bk" rows="3">'+esc(JSON.stringify({tools:S.tools,logs:S.logs}))+'</textarea><div class="btns"><button class="btn s" onclick="restore()">Restore from text</button></div></div>';
+ return h}
+function vEdit(){var t=S.edit==='new'?{id:'',name:'',cat:CATS[0],sn:'',cal:'',yrs:1}:S.tools.filter(function(x){return x.id===S.edit})[0];
+ return'<div class="card"><label>Tool name</label><input id="f1" value="'+esc(t.name)+'"><label>Category</label><select id="f2">'+CATS.map(function(c){return'<option'+(c===t.cat?' selected':'')+'>'+c+'</option>'}).join('')+'</select><label>Serial number</label><input id="f3" value="'+esc(t.sn)+'" autocapitalize="characters"><div class="grid2"><div><label>Last calibration date</label><input id="f4" type="date" value="'+esc(t.cal)+'"></div><div><label>Calibration cycle</label><select id="f5"><option value="1"'+(t.yrs==1?' selected':'')+'>Every 1 year</option><option value="2"'+(t.yrs==2?' selected':'')+'>Every 2 years</option></select></div></div><div class="btns"><button class="btn" onclick="saveTool()">Save tool</button><button class="btn s" onclick="go(\'tools\')">Cancel</button>'+(t.id?'<button class="btn d" onclick="delTool()">Delete</button>':'')+'</div></div>'}
+function ed(id){S.edit=id;draw();window.scrollTo(0,0)}
+function saveTool(){var n=document.getElementById('f1').value.trim();if(!n){alert('Enter a tool name.');return}
+ var o={name:n,cat:f('f2'),sn:f('f3').trim(),cal:f('f4'),yrs:+f('f5')};
+ if(S.edit==='new'){o.id='t'+Date.now();S.tools.push(o)}else{S.tools.forEach(function(t){if(t.id===S.edit)Object.assign(t,o)})}
+ save();go('tools')}
+function f(i){return document.getElementById(i).value}
+function delTool(){if(confirm('Delete this tool?')){S.tools=S.tools.filter(function(t){return t.id!==S.edit});save();go('tools')}}
+function restore(){try{var d=JSON.parse(f('bk'));if(!d.tools)throw 0;S.tools=d.tools;S.logs=d.logs||[];save();draw()}catch(e){alert('That text is not a valid backup.')}}
+function notif(){if(!('Notification'in window)){alert('This browser does not support notifications. Open the app regularly to see the due list.');return}
+ Notification.requestPermission().then(function(p){if(p==='granted')check(true);else alert('Notifications are blocked. Allow them in browser settings.')})}
+function check(force){try{if(!('Notification'in window)||Notification.permission!=='granted')return;var a=S.tools.filter(function(t){var c=st(t).c;return c==='bad'||c==='warn'});
+ if(a.length)new Notification('Calibration due',{body:a.map(function(t){return t.name+' ('+st(t).l+')'}).join('\n')});else if(force)alert('Nothing is due soon.')}catch(e){}}
+function tsv(){return S.tools.filter(function(t){return t.cat!=='Consumable'}).map(function(t){return[t.name,t.sn,t.cal,t.yrs].join('\t')}).join('\n')}
+function cpTsv(){var e=document.getElementById('tsv');e.select();try{if(navigator.clipboard)navigator.clipboard.writeText(e.value);else document.execCommand('copy')}catch(x){try{document.execCommand('copy')}catch(y){}}alert('Copied. In your Sheet, click cell A2 and paste.')}
+function line(){var a=S.tools.filter(function(t){var c=st(t).c;return c==='bad'||c==='warn'});var m=a.length?'Calibration due:\n'+a.map(function(t){return'• '+t.name+(t.sn?' (S/N '+t.sn+')':'')+' – '+st(t).l+', due '+fmt(iso(due(t)))}).join('\n'):'No calibration due within '+S.warn+' days.';window.open('https://line.me/R/share?text='+encodeURIComponent(m),'_blank')}
+function vOut(){
+ var h='<div class="card"><div class="grid2"><div><label>Request no.</label><input id="q1"></div><div><label>Place</label><input id="q2"></div></div><label>Purpose</label><input id="q3"><div class="grid2"><div><label>Take out by</label><input id="q4"></div><div><label>Date</label><input id="q5" type="date" value="'+iso(new Date())+'"></div></div></div><div class="card"><div class="name">Select tools</div>';
+ h+=S.tools.map(function(t){var s=st(t);return'<div class="pick"><input type="checkbox" id="c_'+t.id+'"><div class="t"><div>'+esc(t.name)+'</div><div class="meta">S/N '+(esc(t.sn)||'–')+' · <span class="badge '+s.c+'">'+s.l+'</span></div><input id="r_'+t.id+'" placeholder="Remark" style="margin-top:4px;padding:6px"></div><input type="number" min="1" value="1" id="n_'+t.id+'"></div>'}).join('');
+ return h+'</div><div class="card"><div class="name">Checklist</div>'+CK.map(function(c,i){return'<div class="pick"><input type="checkbox" id="k_'+i+'"><div class="t">'+c+'</div></div>'}).join('')+'</div><div class="btns"><button class="btn" onclick="takeOut()">Record take-out</button></div>'}
+function takeOut(){var it=[];S.tools.forEach(function(t){if(document.getElementById('c_'+t.id).checked)it.push({id:t.id,name:t.name,sn:t.sn,qty:+document.getElementById('n_'+t.id).value||1,cal:st(t).l,rem:f('r_'+t.id)})});
+ if(!it.length){alert('Select at least one tool.');return}
+ var bad=it.filter(function(i){return/Overdue/.test(i.cal)});
+ if(bad.length&&!confirm('Calibration is overdue for: '+bad.map(function(i){return i.name}).join(', ')+'. Take out anyway?'))return;
+ S.logs.unshift({id:'l'+Date.now(),ck:CK.map(function(c,i){return document.getElementById('k_'+i).checked}),req:f('q1'),place:f('q2'),purpose:f('q3'),by:f('q4'),out:f('q5'),back:'',items:it});save();go('log')}
+function vLog(){if(!S.logs.length)return'<div class="card meta">No take-outs yet. Record one on the Take out tab.</div>';
+ return S.logs.map(function(l){return'<div class="card"><div class="row"><div><div class="name">'+(esc(l.req)||'No request no.')+' · '+esc(l.place)+'</div><div class="meta">'+esc(l.purpose)+'<br>Out '+fmt(l.out)+' by '+esc(l.by)+'</div></div><span class="badge '+(l.back?'ok':'warn')+'">'+(l.back?'Back '+fmt(l.back):'Out')+'</span></div><div class="meta" style="margin-top:6px">'+l.items.map(function(i){return esc(i.name)+' ×'+i.qty+(i.sn?' (S/N '+esc(i.sn)+')':'')}).join('<br>')+'</div><div class="btns">'+(l.back?'':'<button class="btn" onclick="back(\''+l.id+'\')">Take back today</button>')+'<button class="btn s" onclick="pr(\''+l.id+'\')">Print form</button><button class="btn d" onclick="delLog(\''+l.id+'\')">Delete</button></div></div>'}).join('')}
+function back(id){S.logs.forEach(function(l){if(l.id===id){l.back=iso(new Date());l.bby=(window.prompt&&prompt('Take back by:'))||l.by}});save();draw()}
+function delLog(id){if(confirm('Delete this log entry?')){S.logs=S.logs.filter(function(l){return l.id!==id});save();draw()}}
+var FM=[['1','Wall Thickness Test',[['w1','1.1 Ultrasonic Wall Thickness Measurement DM5'],['w2','1.2 CRM: S/N'],['w3','1.3 Couplant']]],['2','Hardness Test',[['k1','2.1 Ultrasonic Hardness Test MIC 20'],['k2','2.2 CRM: S/N'],['k3','2.3']]],['3','Magnetic Particle Test',[['m1','4.1 Yoke S/N'],['m2','4.2 UV lamp'],['m3','4.3 Pie gauge'],['m4','4.4 Weight'],['m5','4.5']]],['4','Hydrostatic Test',[['h1','4.1 Pressure Gauge ___ bar: S/N'],['h2','4.2']]],['5','Dye Penetrant Test',[['d1','5.1 Penetrant'],['d2','5.2 Developer'],['d3','5.3 Cleaner']]],['6','Video Scope System',[['v1','6.1 Video scope: S/N'],['v2','6.2']]],['7','Camera',[['c1','7.1 Infrared Thermal Image Camera'],['c2','7.2 Digital Camera']]],['8','Thermometer/Thermocouple',[['t1','8.1']]],['9','Multimeter',[['u1','9.1 Multimeter: S/N'],['u2','9.2']]],['10','Electrical System',[['e1','10.1 Wire AC'],['e2','10.2 Wire DC + Lamp'],['e3','10.3 Connector'],['e4','10.4 Power switch'],['e5','10.5 Transformer AC-DC'],['e6','10.6']]]];
+var RULES=[['w2',/crm.*(wall|thick)|(wall|thick).*crm/i],['k2',/crm.*hard|hard.*crm/i],['w1',/wall thickness|DM5/i],['k1',/hardness|MIC/i],['w3',/couplant/i],['m1',/yoke/i],['m2',/uv/i],['m3',/pie/i],['m4',/^weight/i],['h1',/pressure/i],['d1',/penetrant/i],['d2',/developer/i],['d3',/cleaner/i],['v1',/video/i],['c1',/infrared|thermal/i],['c2',/digital camera/i],['t1',/temperature|thermo/i],['u1',/multimeter/i],['e1',/wire ac/i],['e2',/wire dc/i],['e3',/connector/i],['e4',/power switch/i],['e5',/transformer/i]];
+function slot(n){for(var i=0;i<RULES.length;i++)if(RULES[i][1].test(n))return RULES[i][0];return''}
+function exportPdf(){if(!window.html2pdf){alert('The PDF tool did not load. Use Print and choose Save as PDF.');return}
+ var el=document.getElementById('pvbox');document.getElementById('pv').scrollTop=0;
+ html2pdf().set({margin:8,image:{type:'jpeg',quality:.95},html2canvas:{scale:2,backgroundColor:'#fff'},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(el).outputPdf('blob').then(function(b){var f=new File([b],'take-out-take-back.pdf',{type:'application/pdf'});
+ if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:'Take out/Take back form'}).catch(function(){})}else{var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=f.name;document.body.appendChild(a);a.click();a.remove()}}).catch(function(){alert('Could not create the PDF. Use Print and choose Save as PDF.')})}
+function closePv(){document.getElementById('pv').className=''}
+function pr2(l){var by={},fr=[];l.items.forEach(function(i){var s=slot(i.name);if(s){(by[s]=by[s]||[]).push(i)}else fr.push(i)});
+ function cell(k,txt){var a=by[k]||[],q=0,sn=[],rm=[];a.forEach(function(i){q+=i.qty;if(i.sn)sn.push(i.sn);if(i.rem)rm.push(i.rem)});return'<td>'+esc(txt)+(sn.length?' '+esc(sn.join(', ')):'')+'</td><td>'+(q||'')+'</td><td>'+(q&&l.back?q:'')+'</td><td>'+esc(rm.join('; '))+'</td>'}
+ var h='<div class=np><button class="btn" onclick=window.print()>Print</button> <button class="btn" onclick=exportPdf()>Share / save PDF</button> <button class="btn s" onclick=closePv()>Close</button></div><div id=pvbox style="min-width:620px"><div class=ttl>Material Properties Analysis and Development Centre (MPAD)<br>Performance and Safety Inspection Laboratory (PSI)<br>Take out/Take back for Inspection</div><table class=ft><tr><th>No.</th><th colspan=2>Code/Description</th><th>Take out</th><th>Take back</th><th>Remark</th></tr>';
+ FM.forEach(function(g){g[2].forEach(function(r,j){h+='<tr>'+(j?'':'<td rowspan='+g[2].length+'>'+g[0]+'</td><td rowspan='+g[2].length+'>'+g[1]+'</td>')+cell(r[0],r[1])+'</tr>'})});
+ var tot=Math.max(19,10+fr.length);for(var n=11;n<=tot;n++){var i=fr[n-11];h+='<tr><td>'+n+'</td><td colspan=2>'+(i?esc(i.name)+(i.sn?' S/N '+esc(i.sn):''):'')+'</td><td>'+(i?i.qty:'')+'</td><td>'+(i&&l.back?i.qty:'')+'</td><td>'+(i?esc(i.rem):'')+'</td></tr>'}
+ h+='</table><p class=ck><b>Checklist items:</b><br>'+CK.map(function(c,k){return(l.ck&&l.ck[k]?'☑ ':'☐ ')+esc(c)}).join('<br>')+'</p><table class=ft><tr><td>Request No.: '+esc(l.req)+'</td><td>Place: '+esc(l.place)+'</td><td>Purpose: '+esc(l.purpose)+'</td></tr><tr><td>Take out by: '+esc(l.by)+'</td><td colspan=2>Date: '+fmt(l.out)+'</td></tr><tr><td>Take back by: '+esc(l.bby||(l.back?l.by:''))+'</td><td colspan=2>Date: '+(l.back?fmt(l.back):'')+'</td></tr></table><div class=fc>FS-MPAD-I-621-1-23/01/60</div></div>';
+ var pv=document.getElementById('pv');pv.className='show';pv.innerHTML=h;pv.scrollTop=0}
+function pr(id){var l=S.logs.filter(function(x){return x.id===id})[0];return pr2(l);
+ document.getElementById('pv').innerHTML='<h3 style="text-align:center">Material Properties Analysis and Development Centre (MPAD)<br>Performance and Safety Inspection Laboratory (PSI)<br>Take out/Take back for Inspection</h3><table><tr><th>No.</th><th>Code/Description</th><th>Serial no.</th><th>Take out</th><th>Take back</th><th>Calibration</th><th>Remark</th></tr>'+l.items.map(function(i,k){return'<tr><td>'+(k+1)+'</td><td>'+esc(i.name)+'</td><td>'+esc(i.sn)+'</td><td>'+i.qty+'</td><td>'+(l.back?i.qty:'')+'</td><td>'+esc(i.cal)+'</td><td>'+esc(i.rem)+'</td></tr>'}).join('')+'</table><p>Checklist:<br>'+CK.map(function(c,k){return((l.ck&&l.ck[k])?'☑ ':'☐ ')+c}).join('<br>')+'</p><p>Request No.: '+esc(l.req)+' &nbsp; Place: '+esc(l.place)+'<br>Purpose: '+esc(l.purpose)+'<br>Take out by: '+esc(l.by)+' &nbsp; Date: '+fmt(l.out)+'<br>Take back date: '+fmt(l.back)+'</p>';
+ window.print()}
+load();draw();check(false);
+</script>
+</body>
+</html>
